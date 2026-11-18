@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     // Ticket Management
     Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show']);
     Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign'])->name('tickets.assign');
+    Route::post('tickets/{ticket}/claim', [TicketController::class, 'claim'])->name('tickets.claim');
     Route::patch('tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.status');
     Route::post('tickets/{ticket}/comments', [TicketController::class, 'addComment'])->name('tickets.comments.store');
 

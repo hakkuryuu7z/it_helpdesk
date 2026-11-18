@@ -339,11 +339,17 @@
             <!-- EDP Assignment Card -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>EDP Assignment</span>
+                    <span>Penanggung Jawab (EDP)</span>
                     @if ($ticket->assignedEdp)
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Assigned</span>
+                        @if ($ticket->assigned_to === auth()->id())
+                            <span class="badge bg-success text-white">
+                                <i class="bi bi-person-check-fill me-1"></i>Anda Penanggung Jawab
+                            </span>
+                        @else
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Assigned</span>
+                        @endif
                     @else
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Unassigned</span>
+                        <span class="badge bg-warning text-dark">Unassigned</span>
                     @endif
                 </div>
                 <div class="card-body">
@@ -353,38 +359,77 @@
                                  style="width: 38px; height: 38px; font-size: 0.9rem;">
                                 {{ strtoupper(substr($ticket->assignedEdp->name, 0, 1)) }}
                             </div>
-                            <div>
-                                <div class="fw-semibold text-dark small">{{ $ticket->assignedEdp->name }}</div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-dark small">
+                                    {{ $ticket->assignedEdp->name }}
+                                    @if ($ticket->assigned_to === auth()->id())
+                                        <span class="badge bg-success-subtle text-success small ms-1" style="font-size: 0.65rem;">(Anda)</span>
+                                    @endif
+                                </div>
                                 <div class="text-muted" style="font-size: 0.725rem;">{{ $ticket->assignedEdp->email }}</div>
                             </div>
                         </div>
+
+                        <!-- If assigned to someone else, current EDP can take over -->
+                        @can('assign', $ticket)
+                            @if ($ticket->assigned_to !== auth()->id() && auth()->user()->canServiceBranch($ticket->branch_id))
+                                <form method="POST" action="{{ route('tickets.claim', $ticket) }}" class="mb-3">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-primary w-100 py-1">
+                                        <i class="bi bi-hand-index-thumb me-1"></i> Ambil Alih Tiket (Jadikan Saya Penanggung Jawab)
+                                    </button>
+                                </form>
+                            @endif
+                        @endcan
                     @else
-                        <div class="text-muted small mb-3">No EDP personnel assigned to this ticket yet.</div>
+                        <div class="text-muted small mb-3">
+                            <i class="bi bi-exclamation-circle text-warning me-1"></i> Belum ada teknisi penanggung jawab.
+                        </div>
+
+                        @can('assign', $ticket)
+                            @if (auth()->user()->canServiceBranch($ticket->branch_id))
+                                <form method="POST" action="{{ route('tickets.claim', $ticket) }}" class="mb-3">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-success w-100 py-2 fw-semibold shadow-sm">
+                                        <i class="bi bi-person-check-fill me-1"></i> Ambil Tiket Ini (Kerjakan Sendiri)
+                                    </button>
+                                </form>
+                            @endif
+                        @endcan
                     @endif
 
                     @can('assign', $ticket)
-                        <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="border-top pt-3">
-                            @csrf
-                            <div class="mb-2">
-                                <label for="assigned_to" class="form-label small fw-semibold">Assign Technician</label>
-                                <select name="assigned_to" id="assigned_to" required class="form-select form-select-sm">
-                                    <option value="">Select Eligible EDP</option>
-                                    @foreach ($eligibleAssignees as $edp)
-                                        <option value="{{ $edp->id }}" {{ $ticket->assigned_to === $edp->id ? 'selected' : '' }}>
-                                            {{ $edp->name }} ({{ $edp->roles->first()?->name === 'central_edp' ? 'Central' : 'Branch' }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                        <div class="border-top pt-3">
+                            <label for="assigned_to" class="form-label small fw-semibold text-secondary mb-1">
+                                <i class="bi bi-arrow-left-right text-primary me-1"></i>
+                                {{ $ticket->assigned_to ? 'Oper / Alihkan ke Teknisi Lain' : 'Atau Tugaskan ke Teknisi Lain' }}
+                            </label>
+                            
+                            <form method="POST" action="{{ route('tickets.assign', $ticket) }}">
+                                @csrf
+                                <div class="mb-2">
+                                    <select name="assigned_to" id="assigned_to" required class="form-select form-select-sm">
+                                        <option value="" disabled selected>Pilih Teknisi EDP Tujuan...</option>
+                                        @foreach ($eligibleAssignees as $edp)
+                                            @if ($edp->id !== $ticket->assigned_to)
+                                                <option value="{{ $edp->id }}">
+                                                    {{ $edp->name }} ({{ $edp->roles->first()?->name === 'central_edp' ? 'Central' : 'Branch' }})
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                </div>
 
-                            <div class="mb-2">
-                                <input type="text" name="notes" class="form-control form-control-sm" placeholder="Optional assignment note...">
-                            </div>
+                                <div class="mb-2">
+                                    <input type="text" name="notes" class="form-control form-control-sm"
+                                           placeholder="Catatan serah terima / alasan oper tiket (opsional)...">
+                                </div>
 
-                            <button type="submit" class="btn btn-outline-primary btn-sm w-100">
-                                <i class="bi bi-person-check me-1"></i> Update Assignee
-                            </button>
-                        </form>
+                                <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+                                    <i class="bi bi-send me-1"></i> Oper Penanggung Jawab
+                                </button>
+                            </form>
+                        </div>
                     @endcan
                 </div>
             </div>

@@ -142,6 +142,22 @@ class TicketController extends Controller
         return back()->with('success', "Ticket assigned to {$assignee->name}.");
     }
 
+    public function claim(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->authorize('assign', $ticket);
+
+        $currentUser = $request->user();
+
+        $this->assignTicketAction->execute(
+            ticket: $ticket,
+            assignee: $currentUser,
+            actor: $currentUser,
+            notes: 'Tiket diambil langsung oleh teknisi (' . $currentUser->name . ').'
+        );
+
+        return back()->with('success', "Tiket {$ticket->ticket_number} berhasil Anda ambil alih sebagai penanggung jawab.");
+    }
+
     public function updateStatus(UpdateTicketStatusRequest $request, Ticket $ticket): RedirectResponse
     {
         $newStatus = TicketStatus::from($request->validated('status'));

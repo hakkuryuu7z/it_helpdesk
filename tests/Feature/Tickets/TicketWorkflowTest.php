@@ -157,4 +157,58 @@ class TicketWorkflowTest extends TestCase
         $this->assertEquals(TicketStatus::Closed, $ticket->status);
         $this->assertNotNull($ticket->closed_at);
     }
+
+    public function test_transitioning_unassigned_ticket_to_in_progress_auto_assigns_to_technician(): void
+    {
+        $branch = Branch::factory()->create();
+        $edp = User::factory()->create(['branch_id' => $branch->id]);
+        $edp->assignRole(UserRole::BranchEdp->value);
+        $edp->assignedBranches()->attach($branch->id);
+
+        $ticket = Ticket::factory()->create([
+            'branch_id' => $branch->id,
+            'status' => TicketStatus::Open,
+            'assigned_to' => null,
+        ]);
+
+        $response = $this->actingAs($edp)->patch(route('tickets.status', $ticket), [
+            'status' => TicketStatus::InProgress->value,
+        ]);
+
+        $response->assertRedirect();
+        $ticket->refresh();
+
+        $this->assertEquals(TicketStatus::InProgress, $ticket->status);
+        $this->assertEquals($edp->id, $ticket->assigned_to);
+
+        $this->assertDatabaseHas('ticket_assignments', [
+            'ticket_id' => $ticket->id,
+            'assigned_to' => $edp->id,
+            'assigned_by' => $edp->id,
+        ]);
+    }
+
+    public function test_technician_can_claim_ticket_via_claim_route(): void
+    {
+        $branch = Branch::factory()->create();
+        $centralEdp = User::factory()->create();
+        $centralEdp->assignRole(UserRole::CentralEdp->value);
+
+        $ticket = Ticket::factory()->create([
+            'branch_id' => $branch->id,
+            'assigned_to' => null,
+        ]);
+
+        $response = $this->actingAs($centralEdp)->post(route('tickets.claim', $ticket));
+
+        $response->assertRedirect();
+        $ticket->refresh();
+
+        $this->assertEquals($centralEdp->id, $ticket->assigned_to);
+        $this->assertDatabaseHas('ticket_assignments', [
+            'ticket_id' => $ticket->id,
+            'assigned_to' => $centralEdp->id,
+            'assigned_by' => $centralEdp->id,
+        ]);
+    }
 }

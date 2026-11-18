@@ -44,7 +44,32 @@ class TransitionTicketStatusAction
                 $updates['closed_at'] = null;
             }
 
+            $autoAssigned = false;
+            if (!$ticket->assigned_to && $newStatus === TicketStatus::InProgress && $actor->canServiceBranch($ticket->branch_id) && $actor->hasAnyRole([\App\Enums\UserRole::CentralEdp->value, \App\Enums\UserRole::BranchEdp->value, \App\Enums\UserRole::SuperAdmin->value])) {
+                $updates['assigned_to'] = $actor->id;
+                $autoAssigned = true;
+            }
+
             $ticket->update($updates);
+
+            if ($autoAssigned) {
+                \App\Models\TicketAssignment::create([
+                    'ticket_id' => $ticket->id,
+                    'assigned_to' => $actor->id,
+                    'assigned_by' => $actor->id,
+                    'notes' => 'Otomatis ditugaskan saat teknisi memulai penanganan tiket (In Progress).',
+                    'created_at' => now(),
+                ]);
+
+                $this->auditService->logTicketAction(
+                    ticket: $ticket,
+                    action: 'assigned',
+                    actor: $actor,
+                    oldValues: ['assigned_to' => null],
+                    newValues: ['assigned_to' => $actor->id, 'assignee_name' => $actor->name],
+                    metadata: ['auto_assigned' => true]
+                );
+            }
 
             // Audit history
             $this->auditService->logTicketAction(
