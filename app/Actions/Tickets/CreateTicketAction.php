@@ -2,6 +2,7 @@
 
 namespace App\Actions\Tickets;
 
+use App\Actions\FeatureRequests\CreateFeatureRequestAction;
 use App\Enums\TicketImpact;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
@@ -24,6 +25,7 @@ class CreateTicketAction
         protected TicketWorkflowService $workflowService,
         protected FileUploadService $fileService,
         protected AuditService $auditService,
+        protected CreateFeatureRequestAction $featureRequestAction,
     ) {}
 
     /**
@@ -87,6 +89,11 @@ class CreateTicketAction
                     'subject' => $ticket->subject,
                 ]
             );
+
+            // If Feature Request, create linked feature request record
+            if ($type === TicketType::FeatureRequest) {
+                $this->featureRequestAction->execute($ticket, $data, $creator);
+            }
 
             return $ticket;
         });

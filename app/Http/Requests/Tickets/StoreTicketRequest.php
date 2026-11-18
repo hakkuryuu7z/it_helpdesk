@@ -37,6 +37,9 @@ class StoreTicketRequest extends FormRequest
             'impact' => ['required', Rule::enum(TicketImpact::class)],
             'urgency' => ['required', Rule::enum(TicketUrgency::class)],
             'attachment' => ['nullable', 'file', 'max:10240'], // 10MB
+            'business_requirements' => ['nullable', 'string'],
+            'problem_description' => ['nullable', 'string'],
+            'expected_outcome' => ['nullable', 'string'],
         ];
     }
 }

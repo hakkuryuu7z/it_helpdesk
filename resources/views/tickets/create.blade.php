@@ -11,7 +11,7 @@
         </div>
     </x-slot>
 
-    <div class="row justify-content-center">
+    <div class="row justify-content-center" x-data="{ ticketType: '{{ old('type', request('type', 'incident')) }}' }">
         <div class="col-12 col-lg-9">
             <div class="card">
                 <div class="card-header">
@@ -25,9 +25,10 @@
                             <!-- Ticket Type -->
                             <div class="col-12 col-md-6">
                                 <label for="type" class="form-label small fw-semibold">Ticket Type <span class="text-danger">*</span></label>
-                                <select name="type" id="type" required class="form-select form-select-sm @error('type') is-invalid @enderror">
+                                <select name="type" id="type" required x-model="ticketType"
+                                        class="form-select form-select-sm @error('type') is-invalid @enderror">
                                     @foreach (App\Enums\TicketType::cases() as $t)
-                                        <option value="{{ $t->value }}" {{ old('type') === $t->value ? 'selected' : '' }}>
+                                        <option value="{{ $t->value }}">
                                             {{ $t->label() }}
                                         </option>
                                     @endforeach
@@ -80,7 +81,7 @@
                                 <label for="subject" class="form-label small fw-semibold">Subject / Brief Summary <span class="text-danger">*</span></label>
                                 <input type="text" name="subject" id="subject" value="{{ old('subject') }}" required
                                        class="form-control form-control-sm @error('subject') is-invalid @enderror"
-                                       placeholder="e.g. Printer offline in warehouse billing counter">
+                                       placeholder="e.g. Printer offline / New stock adjustment report feature">
                                 @error('subject')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -96,7 +97,7 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <div class="form-text small">How widely does this issue affect branch operations?</div>
+                                <div class="form-text small">How widely does this issue/request affect operations?</div>
                                 @error('impact')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -121,7 +122,7 @@
                             <!-- Description -->
                             <div class="col-12">
                                 <label for="description" class="form-label small fw-semibold">Detailed Description <span class="text-danger">*</span></label>
-                                <textarea name="description" id="description" rows="5" required
+                                <textarea name="description" id="description" rows="4" required
                                           class="form-control form-control-sm @error('description') is-invalid @enderror"
                                           placeholder="Provide complete troubleshooting details, error messages, device IP or host name, steps to reproduce...">{{ old('description') }}</textarea>
                                 @error('description')
@@ -129,9 +130,39 @@
                                 @enderror
                             </div>
 
+                            <!-- Feature Request Dedicated Specification (Visible when type === 'feature_request') -->
+                            <div class="col-12" x-show="ticketType === 'feature_request'" x-cloak x-transition>
+                                <div class="p-3 bg-light rounded border border-primary border-opacity-25">
+                                    <div class="d-flex align-items-center gap-2 mb-3 text-primary fw-bold">
+                                        <i class="bi bi-lightbulb-fill"></i>
+                                        <span>Feature Proposal Specification (Required for Feature Requests)</span>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label for="problem_description" class="form-label small fw-semibold">1. Current Problem / Workflow Limitation</label>
+                                            <textarea name="problem_description" id="problem_description" rows="2"
+                                                      class="form-control form-control-sm"
+                                                      placeholder="What is currently difficult, slow, or missing in the existing software?">{{ old('problem_description') }}</textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="business_requirements" class="form-label small fw-semibold">2. Business Requirements</label>
+                                            <textarea name="business_requirements" id="business_requirements" rows="3"
+                                                      class="form-control form-control-sm"
+                                                      placeholder="Describe the desired business flow, user inputs, calculations, and rules...">{{ old('business_requirements') }}</textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="expected_outcome" class="form-label small fw-semibold">3. Expected Outcome / Value</label>
+                                            <textarea name="expected_outcome" id="expected_outcome" rows="2"
+                                                      class="form-control form-control-sm"
+                                                      placeholder="What benefits will this provide (e.g. time saved, error prevention, reporting clarity)?">{{ old('expected_outcome') }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Attachment -->
                             <div class="col-12">
-                                <label for="attachment" class="form-label small fw-semibold">Attachment (Screenshot, Log, or Document)</label>
+                                <label for="attachment" class="form-label small fw-semibold">Attachment (Screenshot, Log, or Mockup)</label>
                                 <input type="file" name="attachment" id="attachment"
                                        class="form-control form-control-sm @error('attachment') is-invalid @enderror">
                                 <div class="form-text small">Allowed formats: PNG, JPG, PDF, Word, Excel, CSV, ZIP. Max size: 10 MB. Executables strictly rejected.</div>

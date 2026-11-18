@@ -2,7 +2,10 @@
 
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\FeatureRequestController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TicketAttachmentController;
+use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,13 +28,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class);
 
     // Ticket Management
-    Route::resource('tickets', \App\Http\Controllers\TicketController::class)->only(['index', 'create', 'store', 'show']);
-    Route::post('tickets/{ticket}/assign', [\App\Http\Controllers\TicketController::class, 'assign'])->name('tickets.assign');
-    Route::patch('tickets/{ticket}/status', [\App\Http\Controllers\TicketController::class, 'updateStatus'])->name('tickets.status');
-    Route::post('tickets/{ticket}/comments', [\App\Http\Controllers\TicketController::class, 'addComment'])->name('tickets.comments.store');
+    Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign'])->name('tickets.assign');
+    Route::patch('tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.status');
+    Route::post('tickets/{ticket}/comments', [TicketController::class, 'addComment'])->name('tickets.comments.store');
+
+    // Feature Request Lifecycle Management
+    Route::get('feature-requests', [FeatureRequestController::class, 'index'])->name('feature-requests.index');
+    Route::get('feature-requests/{feature_request}', [FeatureRequestController::class, 'show'])->name('feature-requests.show');
+    Route::patch('feature-requests/{feature_request}/stage', [FeatureRequestController::class, 'updateStage'])->name('feature-requests.update-stage');
 
     // Secure File Downloads
-    Route::get('attachments/{attachment}/download', [\App\Http\Controllers\TicketAttachmentController::class, 'download'])->name('attachments.download');
+    Route::get('attachments/{attachment}/download', [TicketAttachmentController::class, 'download'])->name('attachments.download');
 });
 
 require __DIR__.'/auth.php';

@@ -29,6 +29,21 @@
     <div class="row g-4">
         <!-- Main Column (Left, 8 cols) -->
         <div class="col-12 col-lg-8">
+            @if ($ticket->type === App\Enums\TicketType::FeatureRequest && $ticket->featureRequest)
+                <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <i class="bi bi-lightbulb-fill me-2 fs-5"></i>
+                        <strong>Feature Request Proposal:</strong> Stage:
+                        <span class="{{ $ticket->featureRequest->stage->badgeClass() }} ms-1">
+                            {{ $ticket->featureRequest->stage->label() }}
+                        </span>
+                    </div>
+                    <a href="{{ route('feature-requests.show', $ticket->featureRequest) }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-kanban me-1"></i> View Feature Lifecycle
+                    </a>
+                </div>
+            @endif
+
             <!-- Ticket Description Card -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
