@@ -58,6 +58,16 @@ class TransitionTicketStatusAction
                 ]
             );
 
+            // Notify ticket creator if someone else changed status
+            if ($ticket->creator && $ticket->creator->id !== $actor->id) {
+                $ticket->creator->notify(new \App\Notifications\TicketStatusChangedNotification($ticket, $oldStatus, $newStatus, $actor));
+            }
+
+            // Notify assigned EDP if someone else (e.g. user confirming resolution or Central EDP) changed status
+            if ($ticket->assignedEdp && $ticket->assignedEdp->id !== $actor->id) {
+                $ticket->assignedEdp->notify(new \App\Notifications\TicketStatusChangedNotification($ticket, $oldStatus, $newStatus, $actor));
+            }
+
             return $ticket;
         });
     }

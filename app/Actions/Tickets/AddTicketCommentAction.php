@@ -56,6 +56,19 @@ class AddTicketCommentAction
                 ]
             );
 
+            // Notify stakeholders
+            if (!$isInternal) {
+                // Public message: notify ticket creator if author is someone else
+                if ($ticket->creator && $ticket->creator->id !== $user->id) {
+                    $ticket->creator->notify(new \App\Notifications\TicketCommentAddedNotification($ticket, $comment, $user));
+                }
+            }
+
+            // Notify assigned technician if author is someone else
+            if ($ticket->assignedEdp && $ticket->assignedEdp->id !== $user->id) {
+                $ticket->assignedEdp->notify(new \App\Notifications\TicketCommentAddedNotification($ticket, $comment, $user));
+            }
+
             return $comment;
         });
     }

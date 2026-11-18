@@ -89,6 +89,11 @@ class TransitionFeatureStageAction
                 $ticket->save();
             }
 
+            // Notify feature request creator
+            if ($ticket->creator && $ticket->creator->id !== $actor->id) {
+                $ticket->creator->notify(new \App\Notifications\FeatureRequestStageChangedNotification($featureRequest, $toStage, $actor));
+            }
+
             return $featureRequest;
         });
     }

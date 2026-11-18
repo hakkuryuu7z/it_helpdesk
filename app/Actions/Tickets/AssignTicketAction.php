@@ -54,6 +54,11 @@ class AssignTicketAction
                 metadata: ['notes' => $notes]
             );
 
+            // Notify assignee
+            if ($assignee->id !== $actor->id) {
+                $assignee->notify(new \App\Notifications\TicketAssignedNotification($ticket, $actor));
+            }
+
             return $ticket;
         });
     }

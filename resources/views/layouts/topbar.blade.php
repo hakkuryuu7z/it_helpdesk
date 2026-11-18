@@ -20,17 +20,56 @@
     <!-- Right Header Elements -->
     <div class="d-flex align-items-center gap-3">
         <!-- Notification Dropdown -->
+        @php
+            $unreadCount = auth()->user()->unreadNotifications()->count();
+            $recentNotifications = auth()->user()->unreadNotifications()->take(5)->get();
+        @endphp
         <div class="dropdown">
             <button class="btn btn-sm btn-light position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-bell fs-6"></i>
-                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
-                    <span class="visually-hidden">New alerts</span>
-                </span>
+                @if ($unreadCount > 0)
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                        {{ $unreadCount > 99 ? '99+' : $unreadCount }}
+                    </span>
+                @endif
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 280px;">
-                <li class="dropdown-header fw-bold">Notifications</li>
-                <li><hr class="dropdown-divider my-1"></li>
-                <li class="px-3 py-2 text-center text-muted small">No unread notifications</li>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 320px; max-width: 380px;">
+                <li class="dropdown-header d-flex justify-content-between align-items-center py-2">
+                    <span class="fw-bold">Notifications</span>
+                    @if ($unreadCount > 0)
+                        <span class="badge bg-primary-subtle text-primary">{{ $unreadCount }} unread</span>
+                    @endif
+                </li>
+                <li><hr class="dropdown-divider my-0"></li>
+
+                @forelse ($recentNotifications as $notif)
+                    <li>
+                        <form method="POST" action="{{ route('notifications.read', $notif->id) }}">
+                            @csrf
+                            <button type="submit" class="dropdown-item py-2 px-3 text-wrap border-bottom bg-light">
+                                <div class="fw-semibold text-dark small">{{ $notif->data['title'] ?? 'Notification' }}</div>
+                                <div class="text-muted small text-truncate" style="max-width: 290px;">
+                                    {{ $notif->data['message'] ?? '' }}
+                                </div>
+                                <div class="text-secondary" style="font-size: 0.7rem;">
+                                    {{ $notif->created_at->diffForHumans() }}
+                                </div>
+                            </button>
+                        </form>
+                    </li>
+                @empty
+                    <li class="px-3 py-3 text-center text-muted small">
+                        <i class="bi bi-bell-slash d-block fs-5 text-secondary opacity-50 mb-1"></i>
+                        No unread notifications
+                    </li>
+                @endforelse
+
+                <li><hr class="dropdown-divider my-0"></li>
+                <li>
+                    <a class="dropdown-item text-center small text-primary py-2 fw-semibold" href="{{ route('notifications.index') }}">
+                        View All Notifications &rarr;
+                    </a>
+                </li>
             </ul>
         </div>
 

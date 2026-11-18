@@ -24,10 +24,10 @@ class LayoutAndRoleBaselineTest extends TestCase
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertOk();
-        $response->assertSee('Helpdesk Operations Dashboard');
+        $response->assertSee('Employee Service Portal');
         $response->assertSee('IT HELPDESK');
-        $response->assertSee('Active Tickets');
-        $response->assertSee('Critical / High');
+        $response->assertSee('Total Submitted');
+        $response->assertSee('In Progress / Open');
         $response->assertSee('John Doe Employee');
     }
 

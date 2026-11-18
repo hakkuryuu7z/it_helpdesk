@@ -37,6 +37,11 @@ class Branch extends Model
         return $this->hasMany(User::class);
     }
 
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
     public function assignedEdps(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'branch_edp_assignments', 'branch_id', 'user_id')
