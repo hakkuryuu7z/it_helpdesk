@@ -62,13 +62,16 @@ class DatabaseNotificationTest extends TestCase
             'urgency' => TicketUrgency::High,
         ], $this->regularUser);
 
-        $this->assertEquals(0, $this->branchEdp->notifications()->count());
+        // Branch EDP receives automatic creation alert
+        $this->assertEquals(1, $this->branchEdp->notifications()->count());
 
         $assignAction = app(AssignTicketAction::class);
         $assignAction->execute($ticket, $this->branchEdp, $this->centralEdp, 'Please investigate ASAP');
 
-        $this->assertEquals(1, $this->branchEdp->fresh()->notifications()->count());
-        $notification = $this->branchEdp->notifications()->first();
+        // Branch EDP receives assignment alert (total 2)
+        $this->assertEquals(2, $this->branchEdp->fresh()->notifications()->count());
+        $notification = $this->branchEdp->fresh()->notifications->firstWhere('data.type', 'ticket_assigned');
+        $this->assertNotNull($notification);
         $this->assertEquals('ticket_assigned', $notification->data['type']);
         $this->assertStringContainsString($ticket->ticket_number, $notification->data['title']);
     }
@@ -119,8 +122,8 @@ class DatabaseNotificationTest extends TestCase
         // Regular user must NOT receive notification of internal notes
         $this->assertEquals(0, $this->regularUser->fresh()->notifications()->count());
 
-        // Assigned technician receives notification
-        $this->assertEquals(1, $this->branchEdp->fresh()->notifications()->count());
+        // Assigned technician receives creation + internal note notifications (total 2)
+        $this->assertEquals(2, $this->branchEdp->fresh()->notifications()->count());
     }
 
     public function test_notification_can_be_marked_as_read_and_redirects(): void

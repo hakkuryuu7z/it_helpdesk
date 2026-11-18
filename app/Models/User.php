@@ -60,6 +60,23 @@ class User extends Authenticatable
         return $this->belongsTo(Branch::class);
     }
 
+    /**
+     * Format phone number for WhatsApp notifications.
+     */
+    public function routeNotificationForWhatsapp(): ?string
+    {
+        if (empty($this->phone)) {
+            return null;
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $this->phone);
+        if (str_starts_with($phone, '0')) {
+            $phone = '62' . substr($phone, 1);
+        }
+
+        return $phone;
+    }
+
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);

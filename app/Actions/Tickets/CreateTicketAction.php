@@ -11,6 +11,7 @@ use App\Enums\TicketUrgency;
 use App\Enums\UserRole;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Notifications\TicketCreatedNotification;
 use App\Services\AuditService;
 use App\Services\FileUploadService;
 use App\Services\TicketNumberService;
@@ -93,6 +94,25 @@ class CreateTicketAction
             // If Feature Request, create linked feature request record
             if ($type === TicketType::FeatureRequest) {
                 $this->featureRequestAction->execute($ticket, $data, $creator);
+            }
+
+            // Notify responsible EDP personnel via in-app & WhatsApp
+            $branchEdps = User::role(UserRole::BranchEdp->value)
+                ->whereHas('assignedBranches', fn($q) => $q->where('branches.id', $branchId))
+                ->get();
+
+            $recipients = $branchEdps;
+
+            // Escalate alerts to Central EDP for High/Critical tickets or unassigned branch queue
+            if ($recipients->isEmpty() || in_array($priority, [TicketPriority::High, TicketPriority::Critical])) {
+                $centralEdps = User::role(UserRole::CentralEdp->value)->get();
+                $recipients = $recipients->merge($centralEdps)->unique('id');
+            }
+
+            foreach ($recipients as $edp) {
+                if ($edp->id !== $creator->id) {
+                    $edp->notify(new TicketCreatedNotification($ticket));
+                }
             }
 
             return $ticket;

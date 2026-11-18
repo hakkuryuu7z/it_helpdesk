@@ -31,4 +31,12 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        'enabled' => env('WHATSAPP_ENABLED', true),
+        'driver' => env('WHATSAPP_DRIVER', 'baileys'), // baileys, generic_webhook, log
+        'baileys_url' => env('WHATSAPP_BAILEYS_URL', 'http://127.0.0.1:3000'),
+        'endpoint' => env('WHATSAPP_ENDPOINT'),
+        'token' => env('WHATSAPP_TOKEN'),
+    ],
+
 ];
