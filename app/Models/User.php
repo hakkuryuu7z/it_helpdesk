@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserRole;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -18,9 +21,14 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'branch_id',
+        'department_id',
         'name',
         'email',
+        'username',
+        'phone',
         'password',
+        'is_active',
     ];
 
     /**
@@ -43,6 +51,44 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function assignedBranches(): BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class, 'branch_edp_assignments', 'user_id', 'branch_id')
+            ->withTimestamps();
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Verify whether this user is authorized to manage or service a specific branch.
+     */
+    public function canServiceBranch(int $branchId): bool
+    {
+        if ($this->hasAnyRole([UserRole::SuperAdmin->value, UserRole::CentralEdp->value])) {
+            return true;
+        }
+
+        if ($this->hasRole(UserRole::BranchEdp->value)) {
+            return $this->assignedBranches()->where('branches.id', $branchId)->exists();
+        }
+
+        return (int) $this->branch_id === $branchId;
     }
 }
