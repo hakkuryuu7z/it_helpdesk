@@ -50,34 +50,53 @@
             </li>
         </ul>
 
+        @php
+            $currentUser = auth()->user();
+            $canViewBranches = $currentUser?->can('viewAny', \App\Models\Branch::class);
+            $canViewDepartments = $currentUser?->can('viewAny', \App\Models\Department::class);
+            $canViewUsers = $currentUser?->can('viewAny', \App\Models\User::class);
+            $canViewRoles = $currentUser?->hasRole(\App\Enums\UserRole::SuperAdmin->value) && Route::has('roles.index');
+            $showAdminSection = $canViewBranches || $canViewDepartments || $canViewUsers || $canViewRoles;
+        @endphp
+
+        @if($showAdminSection)
         <!-- Master Data & Administration -->
         <div class="nav-section-title">Administration</div>
         <ul class="nav flex-column mb-3">
+            @if($canViewBranches)
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('branches.*') ? 'active' : '' }}" href="{{ Route::has('branches.index') ? route('branches.index') : '#' }}">
+                <a class="nav-link {{ request()->routeIs('branches.*') ? 'active' : '' }}" href="{{ route('branches.index') }}">
                     <i class="bi bi-building"></i>
                     <span>Branches</span>
                 </a>
             </li>
+            @endif
+            @if($canViewDepartments)
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('departments.*') ? 'active' : '' }}" href="{{ Route::has('departments.index') ? route('departments.index') : '#' }}">
+                <a class="nav-link {{ request()->routeIs('departments.*') ? 'active' : '' }}" href="{{ route('departments.index') }}">
                     <i class="bi bi-diagram-3"></i>
                     <span>Departments</span>
                 </a>
             </li>
+            @endif
+            @if($canViewUsers)
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ Route::has('users.index') ? route('users.index') : '#' }}">
+                <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">
                     <i class="bi bi-people"></i>
                     <span>User Management</span>
                 </a>
             </li>
+            @endif
+            @if($canViewRoles)
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}" href="{{ Route::has('roles.index') ? route('roles.index') : '#' }}">
+                <a class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}" href="{{ route('roles.index') }}">
                     <i class="bi bi-shield-lock"></i>
                     <span>Roles & Permissions</span>
                 </a>
             </li>
+            @endif
         </ul>
+        @endif
     </div>
 
     <!-- Branch Status Footer -->

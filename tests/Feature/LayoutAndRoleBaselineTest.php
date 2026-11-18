@@ -29,6 +29,27 @@ class LayoutAndRoleBaselineTest extends TestCase
         $response->assertSee('Total Submitted');
         $response->assertSee('In Progress / Open');
         $response->assertSee('John Doe Employee');
+        // Regular user must not see administration menus
+        $response->assertDontSee('Administration');
+        $response->assertDontSee('User Management');
+    }
+
+    public function test_super_admin_sees_administration_menu_in_sidebar(): void
+    {
+        $role = Role::firstOrCreate(['name' => UserRole::SuperAdmin->value]);
+        $admin = User::factory()->create([
+            'name' => 'Admin Boss',
+            'email' => 'admin@company.test',
+        ]);
+        $admin->assignRole($role);
+
+        $response = $this->actingAs($admin)->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Administration');
+        $response->assertSee('Branches');
+        $response->assertSee('Departments');
+        $response->assertSee('User Management');
     }
 
     public function test_user_can_be_assigned_any_of_the_five_system_roles(): void
