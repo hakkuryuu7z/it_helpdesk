@@ -60,5 +60,16 @@
             </main>
         </div>
     </div>
+
+    <!-- Global Flash Messages for SweetAlert -->
+    <script>
+        window.flashMessages = {
+            success: @json(session('success')),
+            error: @json(session('error')),
+            validationErrors: @json($errors->all())
+        };
+    </script>
+
+    @stack('scripts')
 </body>
 </html>

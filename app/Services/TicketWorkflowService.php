@@ -87,6 +87,35 @@ class TicketWorkflowService
     }
 
     /**
+     * Get all allowed next statuses for a ticket and user.
+     *
+     * @return array<TicketStatus>
+     */
+    public function getAllowedNextStatuses(Ticket $ticket, User $user): array
+    {
+        $current = $ticket->status->value;
+        $targets = $this->allowedTransitions[$current] ?? [];
+
+        $validStatuses = [];
+        foreach ($targets as $targetValue) {
+            $statusEnum = TicketStatus::tryFrom($targetValue);
+            if ($statusEnum && $this->canTransition($ticket, $statusEnum, $user)) {
+                $validStatuses[] = $statusEnum;
+            }
+        }
+
+        return $validStatuses;
+    }
+
+    /**
+     * Get raw transitions map.
+     */
+    public function getAllowedTransitions(): array
+    {
+        return $this->allowedTransitions;
+    }
+
+    /**
      * Validate status transition and throw validation exception if invalid.
      *
      * @throws ValidationException
@@ -94,8 +123,17 @@ class TicketWorkflowService
     public function validateTransition(Ticket $ticket, TicketStatus $newStatus, User $user, ?string $resolutionNotes = null): void
     {
         if (!$this->canTransition($ticket, $newStatus, $user)) {
+            $reason = match (true) {
+                $ticket->status === TicketStatus::Open && $newStatus === TicketStatus::Closed => 
+                    "Tiket berstatus 'Open' tidak dapat langsung diubah ke 'Closed'. Tiket harus diproses terlebih dahulu melalui 'In Progress' / 'Under Review', kemudian diselesaikan ('Resolved') dengan mengisi solusi perbaikan sebelum dapat ditutup ('Closed'). Jika tiket tidak valid atau dibatalkan, silakan ubah status ke 'Rejected'.",
+                $newStatus === TicketStatus::Resolved && empty(trim($resolutionNotes ?? '')) =>
+                    "Status 'Resolved' mewajibkan pengisian catatan solusi perbaikan (Resolution Notes).",
+                default => 
+                    "Alur transisi status dari '{$ticket->status->label()}' ke '{$newStatus->label()}' tidak diizinkan dalam sistem helpdesk.",
+            };
+
             throw ValidationException::withMessages([
-                'status' => ["Status transition from '{$ticket->status->label()}' to '{$newStatus->label()}' is not permitted."],
+                'status' => ["Status transition from '{$ticket->status->label()}' to '{$newStatus->label()}' is not permitted. {$reason}"],
             ]);
         }
 

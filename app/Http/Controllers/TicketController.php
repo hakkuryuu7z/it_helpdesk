@@ -20,6 +20,7 @@ use App\Models\Branch;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
+use App\Services\TicketWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -31,6 +32,7 @@ class TicketController extends Controller
         protected AssignTicketAction $assignTicketAction,
         protected TransitionTicketStatusAction $transitionStatusAction,
         protected AddTicketCommentAction $addCommentAction,
+        protected TicketWorkflowService $workflowService,
     ) {}
 
     public function index(Request $request): View
@@ -121,7 +123,9 @@ class TicketController extends Controller
                 ->get();
         }
 
-        return view('tickets.show', compact('ticket', 'comments', 'eligibleAssignees'));
+        $allowedNextStatuses = $this->workflowService->getAllowedNextStatuses($ticket, $currentUser);
+
+        return view('tickets.show', compact('ticket', 'comments', 'eligibleAssignees', 'allowedNextStatuses'));
     }
 
     public function assign(AssignTicketRequest $request, Ticket $ticket): RedirectResponse

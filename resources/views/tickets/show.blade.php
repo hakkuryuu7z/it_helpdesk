@@ -255,19 +255,63 @@
                     <!-- EDP / Admin Workflow Transition Form -->
                     @can('updateStatus', $ticket)
                         @if (!auth()->user()->hasRole(App\Enums\UserRole::RegularUser->value))
-                            <form method="POST" action="{{ route('tickets.status', $ticket) }}" x-data="{ targetStatus: '{{ $ticket->status->value }}' }">
+                            <form method="POST" action="{{ route('tickets.status', $ticket) }}" id="statusTransitionForm" x-data="{ targetStatus: '{{ $ticket->status->value }}' }">
                                 @csrf
                                 @method('PATCH')
 
                                 <div class="mb-3">
                                     <label for="status_select" class="form-label small fw-semibold">Update Status</label>
-                                    <select name="status" id="status_select" x-model="targetStatus" class="form-select form-select-sm">
-                                        @foreach (App\Enums\TicketStatus::cases() as $st)
-                                            <option value="{{ $st->value }}" {{ $ticket->status === $st ? 'selected' : '' }}>
-                                                {{ $st->label() }}
-                                            </option>
-                                        @endforeach
+                                    <select name="status" id="status_select" x-model="targetStatus" class="form-select form-select-sm @error('status') is-invalid @enderror">
+                                        <option value="{{ $ticket->status->value }}" selected>
+                                            {{ $ticket->status->label() }} (Status Saat Ini)
+                                        </option>
+                                        
+                                        @php
+                                            $allowedValues = array_map(fn($s) => $s->value, $allowedNextStatuses ?? []);
+                                        @endphp
+
+                                        @if(count($allowedNextStatuses ?? []) > 0)
+                                            <optgroup label="Transisi yang Diizinkan:">
+                                                @foreach ($allowedNextStatuses as $st)
+                                                    <option value="{{ $st->value }}">
+                                                        &rarr; {{ $st->label() }}
+                                                    </option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
+
+                                        <optgroup label="Belum Memenuhi Alur (Tidak Dapat Dipilih):">
+                                            @foreach (App\Enums\TicketStatus::cases() as $st)
+                                                @if($st !== $ticket->status && !in_array($st->value, $allowedValues))
+                                                    <option value="{{ $st->value }}" data-invalid="true">
+                                                        &times; {{ $st->label() }}
+                                                    </option>
+                                                @endif
+                                            @endforeach
+                                        </optgroup>
                                     </select>
+                                    @error('status')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+
+                                    <!-- Visual Lifecycle Guide -->
+                                    <div class="mt-2 p-2 bg-light rounded border small">
+                                        <div class="fw-semibold text-secondary mb-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-diagram-3 text-primary me-1"></i>Alur Standar Tiket:
+                                        </div>
+                                        <div class="d-flex align-items-center flex-wrap gap-1" style="font-size: 0.7rem;">
+                                            <span class="badge {{ $ticket->status === \App\Enums\TicketStatus::Open ? 'bg-primary text-white' : 'bg-light text-muted border' }}">Open</span>
+                                            <span class="text-muted">&rarr;</span>
+                                            <span class="badge {{ $ticket->status === \App\Enums\TicketStatus::InProgress ? 'bg-primary text-white' : 'bg-light text-muted border' }}">In Progress</span>
+                                            <span class="text-muted">&rarr;</span>
+                                            <span class="badge {{ $ticket->status === \App\Enums\TicketStatus::Resolved ? 'bg-primary text-white' : 'bg-light text-muted border' }}">Resolved</span>
+                                            <span class="text-muted">&rarr;</span>
+                                            <span class="badge {{ $ticket->status === \App\Enums\TicketStatus::Closed ? 'bg-success text-white' : 'bg-light text-muted border' }}">Closed</span>
+                                        </div>
+                                        <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                                            * Dari <strong>Open</strong>, silakan ubah ke <strong>In Progress</strong> terlebih dahulu. Jika komplain tidak valid/batal, pilih <strong>Rejected</strong>.
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Mandatory Resolution Notes on Resolved -->
@@ -276,8 +320,11 @@
                                         <i class="bi bi-check-circle me-1"></i> Resolution Notes <span class="text-danger">*</span>
                                     </label>
                                     <textarea name="resolution_notes" id="resolution_notes" rows="3"
-                                              class="form-control form-control-sm"
+                                              class="form-control form-control-sm @error('resolution_notes') is-invalid @enderror"
                                               placeholder="Explain the technical solution, steps taken, or replacement parts...">{{ old('resolution_notes', $ticket->resolution_notes) }}</textarea>
+                                    @error('resolution_notes')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
                                 </div>
 
                                 <button type="submit" class="btn btn-primary btn-sm w-100">
@@ -386,4 +433,70 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusSelect = document.getElementById('status_select');
+            const transitionForm = document.getElementById('statusTransitionForm');
+            const currentStatus = '{{ $ticket->status->value }}';
+            const allowedValues = @json(array_map(fn($s) => $s->value, $allowedNextStatuses ?? []));
+
+            if (statusSelect) {
+                statusSelect.addEventListener('change', function () {
+                    const selectedVal = this.value;
+                    if (selectedVal !== currentStatus && !allowedValues.includes(selectedVal)) {
+                        let explanation = "Transisi status ini tidak diizinkan dalam alur kerja ITSM Helpdesk.";
+                        if (currentStatus === 'open' && selectedVal === 'closed') {
+                            explanation = "<div class='text-start'>" +
+                                "Tiket baru berstatus <strong>Open</strong> tidak dapat langsung ditutup (<strong>Closed</strong>).<br><br>" +
+                                "<div class='p-3 bg-light rounded border small mb-2'>" +
+                                "<div class='fw-bold text-dark mb-2'><i class='bi bi-diagram-3 text-primary me-1'></i>Alur Pengerjaan Tiket Helpdesk:</div>" +
+                                "<div class='mb-1'>1. Pilih <strong>In Progress</strong> saat Anda mulai menangani tiket.</div>" +
+                                "<div class='mb-1'>2. Pilih <strong>Resolved</strong> & isi catatan solusi jika pekerjaan selesai.</div>" +
+                                "<div>3. Baru kemudian status dapat diubah ke <strong>Closed</strong> (atau dikonfirmasi pelapor).</div>" +
+                                "</div>" +
+                                "<div class='small text-danger'><i class='bi bi-info-circle me-1'></i>Jika tiket salah lapor, duplikat, atau dibatalkan, silakan pilih status <strong>Rejected</strong>.</div>" +
+                                "</div>";
+                        }
+
+                        if (window.Swal) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Transisi Status Tidak Diizinkan',
+                                html: explanation,
+                                confirmButtonColor: '#2563eb',
+                                confirmButtonText: 'Kembalikan Pilihan'
+                            }).then(() => {
+                                statusSelect.value = currentStatus;
+                                statusSelect.dispatchEvent(new Event('input'));
+                            });
+                        } else {
+                            alert('Transisi status tidak diizinkan: Tiket Open harus melalui In Progress/Resolved sebelum Closed.');
+                            statusSelect.value = currentStatus;
+                        }
+                    }
+                });
+            }
+
+            if (transitionForm) {
+                transitionForm.addEventListener('submit', function (e) {
+                    const selectedVal = statusSelect ? statusSelect.value : '';
+                    if (selectedVal !== currentStatus && !allowedValues.includes(selectedVal)) {
+                        e.preventDefault();
+                        if (window.Swal) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Tidak Dapat Menerapkan Status',
+                                text: 'Pilihan status belum memenuhi alur kerja yang valid. Silakan pilih status yang diizinkan.',
+                                confirmButtonColor: '#2563eb'
+                            });
+                        }
+                        return false;
+                    }
+                });
+            }
+        });
+    </script>
+    @endpush
 </x-app-layout>
