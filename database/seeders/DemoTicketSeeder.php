@@ -32,10 +32,10 @@ class DemoTicketSeeder extends Seeder
         $userSby = User::where('email', 'user.sby@helpdesk.local')->first();
         $userHq = User::where('email', 'user.hq@helpdesk.local')->first();
 
-        $catHardware = TicketCategory::where('name', 'Hardware & Peripherals')->first();
-        $catNetwork = TicketCategory::where('name', 'Network & Connectivity')->first();
-        $catErp = TicketCategory::where('name', 'ERP & Core Business Systems')->first();
-        $catSoftware = TicketCategory::where('name', 'Custom Internal Applications')->first();
+        $catNetwork = TicketCategory::where('name', 'like', '%Network%')->first();
+        $catHardware = TicketCategory::where('name', 'like', '%Printer%')->first();
+        $catAccount = TicketCategory::where('name', 'like', '%New User%')->first();
+        $catFeature = TicketCategory::where('name', 'like', '%Financial%')->first();
 
         $createAction = app(CreateTicketAction::class);
         $transitionAction = app(TransitionTicketStatusAction::class);
@@ -70,10 +70,10 @@ class DemoTicketSeeder extends Seeder
         }
 
         // 2. High Priority Service Request in Surabaya: New Branch Manager ERP Provisioning (Resolved)
-        if ($userSby && $catErp && $edpSby) {
+        if ($userSby && $catAccount && $edpSby) {
             $t2 = $createAction->execute([
                 'type' => TicketType::ServiceRequest,
-                'category_id' => $catErp->id,
+                'category_id' => $catAccount->id,
                 'subject' => 'ERP & Financial Authorization Access for New Branch Manager',
                 'description' => "Please configure ERP authorization profile for Budi Santoso (NIP: SBY-8821). Needs Purchase Order approval ceiling up to Rp 500,000,000 and Journal Voucher view rights.",
                 'impact' => TicketImpact::Medium,
@@ -98,10 +98,10 @@ class DemoTicketSeeder extends Seeder
         }
 
         // 4. Feature Request: Automated Bank Reconciliation Module (In Development Stage)
-        if ($userHq && $catSoftware && $centralEdp) {
+        if ($userHq && $catFeature && $centralEdp) {
             $t4 = $createAction->execute([
                 'type' => TicketType::FeatureRequest,
-                'category_id' => $catSoftware->id,
+                'category_id' => $catFeature->id,
                 'subject' => 'Automated Bank Reconciliation & Statement Parser',
                 'description' => 'Need automated parser for MT940 and CSV bank statements to reconcile against ERP general ledger entries.',
                 'business_requirements' => "1. Support daily import of Mandiri, BCA, and BRI MT940 formats.\n2. Automatic transaction matching algorithm based on date (+/- 2 days), amount, and invoice reference pattern.\n3. Discrepancy exception queue for accounting review.",

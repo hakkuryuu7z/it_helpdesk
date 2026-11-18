@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $defaultPassword = Hash::make('Password123!');
+        $defaultPassword = Hash::make('password');
 
         $hqBranch = Branch::where('code', 'HQ')->first();
         $bdgBranch = Branch::where('code', 'BDG')->first();
@@ -30,8 +30,8 @@ class UserSeeder extends Seeder
         $sbyOpsDept = Department::where('branch_id', $sbyBranch->id)->where('name', 'like', '%Operations%')->first();
 
         // 1. Super Admin
-        $superAdmin = User::firstOrCreate([
-            'email' => 'superadmin@helpdesk.test',
+        $superAdmin = User::updateOrCreate([
+            'email' => 'superadmin@helpdesk.local',
         ], [
             'branch_id' => $hqBranch->id,
             'department_id' => $hqItDept->id ?? null,
@@ -41,11 +41,25 @@ class UserSeeder extends Seeder
             'password' => $defaultPassword,
             'is_active' => true,
         ]);
-        $superAdmin->assignRole(UserRole::SuperAdmin->value);
+        $superAdmin->syncRoles([UserRole::SuperAdmin->value]);
+
+        // Alias for .test domain
+        $superAdminTest = User::updateOrCreate([
+            'email' => 'superadmin@helpdesk.test',
+        ], [
+            'branch_id' => $hqBranch->id,
+            'department_id' => $hqItDept->id ?? null,
+            'name' => 'System Super Administrator',
+            'username' => 'superadmin.test',
+            'phone' => '+62811000001',
+            'password' => $defaultPassword,
+            'is_active' => true,
+        ]);
+        $superAdminTest->syncRoles([UserRole::SuperAdmin->value]);
 
         // 2. Central EDP Lead
-        $centralEdp = User::firstOrCreate([
-            'email' => 'central.edp@helpdesk.test',
+        $centralEdp = User::updateOrCreate([
+            'email' => 'central.edp@helpdesk.local',
         ], [
             'branch_id' => $hqBranch->id,
             'department_id' => $hqItDept->id ?? null,
@@ -55,11 +69,11 @@ class UserSeeder extends Seeder
             'password' => $defaultPassword,
             'is_active' => true,
         ]);
-        $centralEdp->assignRole(UserRole::CentralEdp->value);
+        $centralEdp->syncRoles([UserRole::CentralEdp->value]);
 
         // 3. Branch EDP Bandung (also services Semarang)
-        $edpBandung = User::firstOrCreate([
-            'email' => 'edp.bandung@helpdesk.test',
+        $edpBandung = User::updateOrCreate([
+            'email' => 'edp.bdg@helpdesk.local',
         ], [
             'branch_id' => $bdgBranch->id,
             'department_id' => $bdgItDept->id ?? null,
@@ -69,9 +83,8 @@ class UserSeeder extends Seeder
             'password' => $defaultPassword,
             'is_active' => true,
         ]);
-        $edpBandung->assignRole(UserRole::BranchEdp->value);
+        $edpBandung->syncRoles([UserRole::BranchEdp->value]);
 
-        // Assign to Bandung & Semarang in branch_edp_assignments
         BranchEdpAssignment::firstOrCreate([
             'user_id' => $edpBandung->id,
             'branch_id' => $bdgBranch->id,
@@ -82,8 +95,8 @@ class UserSeeder extends Seeder
         ]);
 
         // 4. Branch EDP Surabaya
-        $edpSurabaya = User::firstOrCreate([
-            'email' => 'edp.surabaya@helpdesk.test',
+        $edpSurabaya = User::updateOrCreate([
+            'email' => 'edp.sby@helpdesk.local',
         ], [
             'branch_id' => $sbyBranch->id,
             'department_id' => Department::where('branch_id', $sbyBranch->id)->where('name', 'like', '%IT%')->value('id'),
@@ -93,7 +106,7 @@ class UserSeeder extends Seeder
             'password' => $defaultPassword,
             'is_active' => true,
         ]);
-        $edpSurabaya->assignRole(UserRole::BranchEdp->value);
+        $edpSurabaya->syncRoles([UserRole::BranchEdp->value]);
 
         BranchEdpAssignment::firstOrCreate([
             'user_id' => $edpSurabaya->id,
@@ -101,8 +114,8 @@ class UserSeeder extends Seeder
         ]);
 
         // 5. Branch Admin Bandung
-        $adminBandung = User::firstOrCreate([
-            'email' => 'admin.bandung@helpdesk.test',
+        $adminBandung = User::updateOrCreate([
+            'email' => 'admin.bdg@helpdesk.local',
         ], [
             'branch_id' => $bdgBranch->id,
             'department_id' => Department::where('branch_id', $bdgBranch->id)->where('name', 'like', '%General%')->value('id'),
@@ -112,11 +125,11 @@ class UserSeeder extends Seeder
             'password' => $defaultPassword,
             'is_active' => true,
         ]);
-        $adminBandung->assignRole(UserRole::BranchAdmin->value);
+        $adminBandung->syncRoles([UserRole::BranchAdmin->value]);
 
         // 6. Regular User Bandung (Finance)
-        $userBandung = User::firstOrCreate([
-            'email' => 'user.bandung@helpdesk.test',
+        $userBandung = User::updateOrCreate([
+            'email' => 'user.bdg@helpdesk.local',
         ], [
             'branch_id' => $bdgBranch->id,
             'department_id' => $bdgFinDept->id ?? null,
@@ -126,11 +139,11 @@ class UserSeeder extends Seeder
             'password' => $defaultPassword,
             'is_active' => true,
         ]);
-        $userBandung->assignRole(UserRole::RegularUser->value);
+        $userBandung->syncRoles([UserRole::RegularUser->value]);
 
         // 7. Regular User Surabaya (Operations)
-        $userSurabaya = User::firstOrCreate([
-            'email' => 'user.surabaya@helpdesk.test',
+        $userSurabaya = User::updateOrCreate([
+            'email' => 'user.sby@helpdesk.local',
         ], [
             'branch_id' => $sbyBranch->id,
             'department_id' => $sbyOpsDept->id ?? null,
@@ -140,6 +153,20 @@ class UserSeeder extends Seeder
             'password' => $defaultPassword,
             'is_active' => true,
         ]);
-        $userSurabaya->assignRole(UserRole::RegularUser->value);
+        $userSurabaya->syncRoles([UserRole::RegularUser->value]);
+
+        // 8. Regular User HQ
+        $userHq = User::updateOrCreate([
+            'email' => 'user.hq@helpdesk.local',
+        ], [
+            'branch_id' => $hqBranch->id,
+            'department_id' => $hqItDept->id ?? null,
+            'name' => 'Maya Anggraini (HQ Accounting)',
+            'username' => 'maya.hq',
+            'phone' => '+62811000008',
+            'password' => $defaultPassword,
+            'is_active' => true,
+        ]);
+        $userHq->syncRoles([UserRole::RegularUser->value]);
     }
 }
