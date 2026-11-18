@@ -1,66 +1,136 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Centralized IT Helpdesk System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+An enterprise-grade, web-based IT Service Management (ITSM) and Feature Engineering lifecycle platform built for distributed, multi-branch organizations.
 
-## About Laravel
+[![Laravel Version](https://img.shields.io/badge/Laravel-11.x-red.svg)](https://laravel.com)
+[![PHP Version](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://php.net)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org)
+[![Automated Tests](https://img.shields.io/badge/Tests-74%20Passed%20(248%20assertions)-brightgreen.svg)]()
+[![Security Hardened](https://img.shields.io/badge/Security-CWE--1236%20%7C%20IDOR%20%7C%20CSRF%20Protected-success.svg)]()
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 1. System Overview & Core Capabilities
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+The **Centralized IT Helpdesk System** connects headquarters and regional branches into a single unified operational dashboard while enforcing strict branch-isolated access boundaries:
 
-## Learning Laravel
+- **Multi-Branch Isolation with Central Oversight**: Regular users and branch staff are confined to their home branch. Branch EDP personnel can manage multiple designated branches via explicit assignment mapping (`branch_edp_assignments`). Central EDP and Super Administrators monitor and triage incidents across all branches.
+- **Three Ticket Modalities**:
+  - **Incidents & Complaints**: Technical failures, network outages, printer malfunctions, hardware errors.
+  - **Service Requests**: Access requests, ERP account provisioning, workstation installations.
+  - **Feature Requests**: Software change proposals with a dedicated 9-stage engineering lifecycle (`submitted` &rarr; `under_review` &rarr; `accepted` &rarr; `planning` &rarr; `development` &rarr; `testing` &rarr; `deployment` &rarr; `completed`).
+- **Monotonic Gap-Free Ticket Numbering**: Generates concurrency-safe, audit-compliant ticket IDs (`HD-YYYY-000001`) using PostgreSQL `lockForUpdate()` database sequences.
+- **Bi-Directional Discussion & Confidential EDP Notes**: Tickets feature full audit-stamped discussions. Internal notes (`is_internal = true`) are strictly accessible to authorized EDP personnel and are invisible to regular employees.
+- **Secure Private Attachments**: Uploaded diagnostic files, logs, and screenshots are stored in private storage (never in `public/`), with UUID obfuscation, MIME verification, executable blocking, and authorized streaming downloads.
+- **Role-Aware Realtime Dashboards**: Dynamic operational portals tailored for each persona (Employee Portal, Branch Technician Workbench, Central Operations Center, and Super Admin Control Center).
+- **Secure Analytics & CSV Streaming Export**: Fast, streaming CSV exports with formula injection sanitization (CWE-1236 defense) that strictly respect user branch boundaries.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 2. Technology Stack
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Backend**: PHP 8.2+, Laravel 11.x (Modular Monolith)
+- **Database**: PostgreSQL 16 (Relational integrity, foreign keys, JSONB audit values, `EPOCH` metrics)
+- **Authorization**: Spatie Laravel Permission 6.x + Laravel Resource Policies + Scoped Eloquent Queries
+- **Frontend**: Laravel Blade, Bootstrap 5.3, Bootstrap Icons, Alpine.js, Vite 5.x
+- **Containerization**: Docker & Docker Compose (Multi-stage build, Nginx 1.27, PHP-FPM 8.2 Alpine, PostgreSQL 16 Alpine, Queue Worker, Scheduler)
+- **Testing**: PHPUnit / Laravel Test Suite (74 feature & unit tests, 248 assertions)
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 3. User Roles & Permission Matrix
 
-### Premium Partners
+| Role | Branch Scope | Ticket Access | Feature Requests | Master Data Admin | Audit Trail |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Super Admin** | System-wide | Full access | Full lifecycle | Full CRUD (Users, Branches, Depts, Roles) | Full View |
+| **Central EDP** | System-wide | View all, Triage, Assign, Escalate, Resolve | Review, Accept/Reject, Stage Transitions, Architecture | View Branches, Departments, Users | Ticket Audit View |
+| **Branch EDP** | Assigned Branches | View & handle tickets in assigned branches | View branch proposals | View branch users | Branch Audit View |
+| **Branch Admin** | Own Branch | View branch tickets & reports | View branch proposals | Manage users within own branch | Branch Audit View |
+| **Regular User**| Own Tickets Only| Strictly own tickets & public comments | Propose new features | None | Own Ticket History |
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+---
 
-## Contributing
+## 4. Default Demonstration Credentials
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+The application is pre-seeded with synthetic test accounts across all roles (default password: `password`):
 
-## Code of Conduct
+| Role | Email | Password | Branch Context |
+| :--- | :--- | :--- | :--- |
+| **Super Admin** | `superadmin@helpdesk.local` | `password` | System-wide (HQ) |
+| **Central EDP** | `central.edp@helpdesk.local` | `password` | System-wide (HQ) |
+| **Branch EDP (Bandung)** | `edp.bdg@helpdesk.local` | `password` | BDG (Bandung) & SMG (Semarang) |
+| **Branch EDP (Surabaya)** | `edp.sby@helpdesk.local` | `password` | SBY (Surabaya) |
+| **Branch Admin (Bandung)** | `admin.bdg@helpdesk.local` | `password` | BDG (Bandung) |
+| **Regular User (Bandung)** | `user.bdg@helpdesk.local` | `password` | BDG (Bandung) |
+| **Regular User (Surabaya)** | `user.sby@helpdesk.local` | `password` | SBY (Surabaya) |
+| **Regular User (HQ)** | `user.hq@helpdesk.local` | `password` | HQ (Head Office) |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 5. Local Development Setup
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Prerequisites
+- PHP 8.2 or higher
+- Composer 2.x
+- Node.js 18+ and NPM
+- PostgreSQL 16+
 
-## License
+### Quickstart Commands
+```bash
+# 1. Clone repository
+git clone https://github.com/your-org/EDP_Management.git
+cd EDP_Management
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# 2. Install PHP and JS dependencies
+composer install
+npm install
+
+# 3. Configure environment
+cp .env.example .env
+php artisan key:generate
+
+# Configure database credentials in .env:
+# DB_CONNECTION=pgsql
+# DB_HOST=127.0.0.1
+# DB_PORT=5432
+# DB_DATABASE=helpdesk_db
+# DB_USERNAME=postgres
+# DB_PASSWORD=your_password
+
+# 4. Run migrations and seed synthetic demonstration data
+php artisan migrate --seed
+
+# 5. Build frontend assets
+npm run build
+
+# 6. Run automated test suite
+php artisan test
+
+# 7. Start local server
+php artisan serve
+```
+
+---
+
+## 6. Production VPS Deployment (Docker Compose)
+
+For production deployment on an Ubuntu Linux VPS, see the comprehensive [Deployment & Operations Handbook](DEPLOYMENT_AND_OPERATIONS_HANDBOOK.md).
+
+Quick production startup:
+```bash
+# Verify environment configuration
+cp .env.example .env
+
+# Build and launch production containers
+docker compose -f compose.prod.yaml up -d --build
+
+# Run migrations and seed initial roles
+docker compose -f compose.prod.yaml exec app php artisan migrate --force --seed
+```
+
+---
+
+## 7. Automated Backups & Disaster Recovery
+
+- **Automated Backup**: `bash scripts/backup.sh` executes a compressed database dump with 14-day retention.
+- **Automated Restore**: `bash scripts/restore.sh /path/to/backup_file.sql.gz` terminates active sessions and safely restores schema and data.
