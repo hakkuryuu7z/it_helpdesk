@@ -31,7 +31,9 @@ class WhatsAppChannel
         if (method_exists($notification, 'toWhatsApp')) {
             $message = $notification->toWhatsApp($notifiable);
             if (!empty($message)) {
-                $this->gateway->send($phone, $message);
+                $ticket = property_exists($notification, 'ticket') ? $notification->ticket : null;
+                $recipientName = property_exists($notifiable, 'name') ? $notifiable->name : null;
+                $this->gateway->send($phone, $message, $ticket, $recipientName);
             }
         }
     }

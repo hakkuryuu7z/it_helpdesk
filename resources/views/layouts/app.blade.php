@@ -50,7 +50,7 @@
                 <!-- Page Header (Optional) -->
                 @isset($header)
                     <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
-                        {{ $header }}
+                        {!! $header !!}
                     </div>
                 @endisset
 

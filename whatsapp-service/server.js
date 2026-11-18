@@ -95,6 +95,67 @@ app.get('/status', (req, res) => {
     });
 });
 
+// Endpoint 1b: Live QR Data in JSON for Dashboard Integration
+app.get('/qr-data', async (req, res) => {
+    try {
+        let qrDataUrl = null;
+        if (currentQR) {
+            qrDataUrl = await QRCode.toDataURL(currentQR, { width: 320, margin: 2 });
+        }
+
+        return res.json({
+            success: true,
+            connected: isConnected,
+            user: userJid,
+            has_qr_pending: !!currentQR,
+            qr_data_url: qrDataUrl,
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+// Endpoint 1c: Disconnect / Logout Session
+app.post('/disconnect', async (req, res) => {
+    try {
+        console.log('[Baileys] Admin requested disconnect / unlink session.');
+        if (sock) {
+            try {
+                await sock.logout();
+            } catch (logoutErr) {
+                console.warn('[Baileys] Socket logout warning:', logoutErr.message);
+            }
+        }
+
+        isConnected = false;
+        userJid = null;
+        currentQR = null;
+
+        // Clean auth dir
+        const fs = await import('fs');
+        if (fs.existsSync(AUTH_DIR)) {
+            fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+        }
+
+        // Restart socket to generate new QR
+        setTimeout(() => startWhatsAppSocket(), 1500);
+
+        return res.json({
+            success: true,
+            message: 'WhatsApp session unlinked successfully. New QR code will be generated.',
+        });
+    } catch (err) {
+        console.error('[Baileys] Failed to disconnect session:', err);
+        return res.status(500).json({
+            success: false,
+            error: err.message || 'Failed to disconnect session.',
+        });
+    }
+});
+
 // Endpoint 2: Web QR View
 app.get('/qr', async (req, res) => {
     if (isConnected) {

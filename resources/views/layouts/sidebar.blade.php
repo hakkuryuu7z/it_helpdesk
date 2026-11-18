@@ -55,14 +55,23 @@
             $canViewBranches = $currentUser?->can('viewAny', \App\Models\Branch::class);
             $canViewDepartments = $currentUser?->can('viewAny', \App\Models\Department::class);
             $canViewUsers = $currentUser?->can('viewAny', \App\Models\User::class);
-            $canViewRoles = $currentUser?->hasRole(\App\Enums\UserRole::SuperAdmin->value) && Route::has('roles.index');
-            $showAdminSection = $canViewBranches || $canViewDepartments || $canViewUsers || $canViewRoles;
+            $isSuperAdmin = $currentUser?->hasRole(\App\Enums\UserRole::SuperAdmin->value);
+            $canViewRoles = $isSuperAdmin && Route::has('roles.index');
+            $showAdminSection = $canViewBranches || $canViewDepartments || $canViewUsers || $canViewRoles || $isSuperAdmin;
         @endphp
 
         @if($showAdminSection)
         <!-- Master Data & Administration -->
         <div class="nav-section-title">Administration</div>
         <ul class="nav flex-column mb-3">
+            @if($isSuperAdmin)
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.whatsapp.*') ? 'active' : '' }}" href="{{ route('admin.whatsapp.index') }}">
+                    <i class="bi bi-whatsapp text-success"></i>
+                    <span>WhatsApp Gateway</span>
+                </a>
+            </li>
+            @endif
             @if($canViewBranches)
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('branches.*') ? 'active' : '' }}" href="{{ route('branches.index') }}">

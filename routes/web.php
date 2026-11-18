@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\WhatsAppGatewayController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
@@ -50,6 +51,15 @@ Route::middleware('auth')->group(function () {
     // Reports & Analytics
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/export-csv', [ReportController::class, 'exportCsv'])->name('reports.export-csv');
+
+    // WhatsApp Gateway Monitoring & Audit Logs (Super Admin only)
+    Route::prefix('admin/whatsapp')->name('admin.whatsapp.')->group(function () {
+        Route::get('/', [WhatsAppGatewayController::class, 'index'])->name('index');
+        Route::get('/status', [WhatsAppGatewayController::class, 'status'])->name('status');
+        Route::post('/send-test', [WhatsAppGatewayController::class, 'sendTest'])->name('send-test');
+        Route::post('/disconnect', [WhatsAppGatewayController::class, 'disconnect'])->name('disconnect');
+        Route::post('/clear-logs', [WhatsAppGatewayController::class, 'clearLogs'])->name('clear-logs');
+    });
 });
 
 require __DIR__.'/auth.php';

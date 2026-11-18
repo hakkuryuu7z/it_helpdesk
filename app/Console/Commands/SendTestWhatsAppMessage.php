@@ -56,7 +56,7 @@ class SendTestWhatsAppMessage extends Command
 
         $this->line("\nDispatching message...");
 
-        $success = $gateway->send($normalizedPhone, $message);
+        $success = $gateway->send($normalizedPhone, $message, null, 'CLI Tester');
 
         if ($success) {
             $this->info("\n✅ Test WhatsApp message dispatched successfully!");
