@@ -41,4 +41,9 @@ class TicketHistory extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function actor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }
