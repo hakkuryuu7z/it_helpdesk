@@ -47,8 +47,15 @@
             </label>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm mb-3">
             <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Helpdesk
         </button>
+
+        @if (Route::has('register'))
+            <div class="text-center small text-muted">
+                New employee?
+                <a href="{{ route('register') }}" class="text-decoration-none fw-semibold">Register an account</a>
+            </div>
+        @endif
     </form>
 </x-guest-layout>

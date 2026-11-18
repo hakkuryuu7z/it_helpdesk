@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -36,11 +38,19 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        $defaultBranchId = Branch::where('code', 'HQ')->value('id') ?? Branch::first()?->id;
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'branch_id' => $defaultBranchId,
+            'is_active' => true,
         ]);
+
+        if (\Spatie\Permission\Models\Role::where('name', UserRole::RegularUser->value)->exists()) {
+            $user->assignRole(UserRole::RegularUser->value);
+        }
 
         event(new Registered($user));
 
