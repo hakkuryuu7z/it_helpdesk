@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: helpdesk_app:prod
     container_name: helpdesk_app_prod
     restart: always
     working_dir: /var/www/html
@@ -51,9 +52,7 @@ services:
       - helpdesk_internal
 
   queue:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: helpdesk_app:prod
     container_name: helpdesk_queue_prod
     restart: always
     command: ["php", "artisan", "queue:work", "--tries=3", "--timeout=90", "--stop-when-empty=false"]
@@ -70,9 +69,7 @@ services:
       - helpdesk_internal
 
   scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: helpdesk_app:prod
     container_name: helpdesk_scheduler_prod
     restart: always
     command: ["php", "artisan", "schedule:work"]
@@ -92,6 +89,7 @@ services:
     build:
       context: ./whatsapp-service
       dockerfile: Dockerfile
+    image: helpdesk_whatsapp_gateway:prod
     container_name: helpdesk_whatsapp_gateway_prod
     restart: always
     volumes:

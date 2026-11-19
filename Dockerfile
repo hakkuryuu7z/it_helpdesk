@@ -14,22 +14,15 @@ RUN npm run build
 # ==========================================
 FROM php:8.2-fpm-alpine AS app
 
-# Install system dependencies and PostgreSQL client utilities
+# Copy official pre-compiled PHP extension installer script
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+
+# Install system dependencies and fast PHP extensions without compiling heavy dev libs manually
 RUN apk add --no-cache \
     postgresql-client \
-    postgresql-dev \
-    libzip-dev \
-    icu-dev \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    oniguruma-dev \
     bash \
-    su-exec
-
-# Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
+    su-exec \
+    && install-php-extensions \
         pdo_pgsql \
         pgsql \
         intl \
