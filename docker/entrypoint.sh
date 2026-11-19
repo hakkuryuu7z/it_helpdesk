@@ -14,6 +14,18 @@ if [ ! -w /var/www/html/storage ]; then
   chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache || true
 fi
 
+# Create public storage symlink if missing
+if [ ! -L /var/www/html/public/storage ]; then
+  echo "Linking storage to public..."
+  php artisan storage:link || true
+fi
+
+# Run database migrations if enabled (default: true)
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+  echo "Running database migrations..."
+  php artisan migrate --force || true
+fi
+
 # In production mode, optimize configurations
 if [ "${APP_ENV}" = "production" ]; then
   echo "Caching Laravel configuration, routes, and events for production..."
