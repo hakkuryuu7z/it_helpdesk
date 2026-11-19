@@ -17,7 +17,7 @@ FROM php:8.2-fpm-alpine AS app
 # Copy official pre-compiled PHP extension installer script
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-# Install system dependencies and fast PHP extensions without compiling heavy dev libs manually
+# Install system dependencies and fast PHP extensions (lean & blazing fast build for VPS)
 RUN apk add --no-cache \
     postgresql-client \
     bash \
@@ -25,11 +25,9 @@ RUN apk add --no-cache \
     && install-php-extensions \
         pdo_pgsql \
         pgsql \
-        intl \
         bcmath \
         zip \
         opcache \
-        gd \
         pcntl
 
 # Install Composer
